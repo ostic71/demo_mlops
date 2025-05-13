@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  data-generator:
+    build: ./data-generator
+    ports:
+      - "9999:9999"
+    command: ["python", "generator.py"]
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: bankdb
+    ports:
+      - "5432:5432"
+
+  spark:
+    build: ./spark
+    volumes:
+      - ./spark:/app
+    command: ["spark-submit", "app.py"]
+    depends_on:
+      - data-generator
+  
+  dashboard:
+    build: ./dashboard
+    ports:
+      - "8501:8501"
+    depends_on:
+      - postgres
+
