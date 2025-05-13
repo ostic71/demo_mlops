@@ -8,29 +8,50 @@ st_autorefresh(interval=5000, key="refresh")
 
 st.title("📊 Bank Transaction Anomaly Dashboard")
 
-def load_data():
+# Hàm load dữ liệu từ bảng transactions
+def load_all_transactions():
     conn = psycopg2.connect(
         host="postgres",
         database="bankdb",
         user="user",
         password="password"
     )
+    # Lấy dữ liệu từ bảng transactions (tất cả giao dịch)
     df = pd.read_sql_query("SELECT * FROM transactions ORDER BY timestamp DESC LIMIT 100", conn)
     conn.close()
     return df
 
-data = load_data()
+# Hàm load dữ liệu từ bảng transactions_anomaly
+def load_anomalies():
+    conn = psycopg2.connect(
+        host="postgres",
+        database="bankdb",
+        user="user",
+        password="password"
+    )
+    # Lấy dữ liệu từ bảng transactions_anomaly (anomaly = -1)
+    df = pd.read_sql_query("SELECT * FROM transactions_anomaly ORDER BY timestamp DESC LIMIT 100", conn)
+    conn.close()
+    return df
 
-st.write(f"### Showing {len(data)} Latest Transactions")
-st.dataframe(data)
+# Lấy tất cả dữ liệu giao dịch từ bảng transactions
+data_all = load_all_transactions()
 
-anomalies = data[data['anomaly'] == -1]
+# Lấy dữ liệu giao dịch có anomaly = -1 từ bảng transactions_anomaly
+anomalies = load_anomalies()
+
+# Hiển thị các giao dịch gần đây từ bảng transactions
+st.write(f"### Showing {len(data_all)} Latest Transactions")
+st.dataframe(data_all)
+
+# Hiển thị các giao dịch bất thường (anomaly = -1) từ bảng transactions_anomaly
 st.write(f"### 🚨 {len(anomalies)} Anomalies Detected")
 st.dataframe(anomalies)
 
 st.write("---")
 st.header("📝 Thêm Giao Dịch Thủ Công Để Test")
 
+# Form nhập giao dịch mới
 with st.form("add_transaction_form"):
     account_id = st.number_input("Account ID", min_value=1, step=1)
     transaction_id = st.number_input("Transaction ID", min_value=1000, step=1)
@@ -61,4 +82,3 @@ with st.form("add_transaction_form"):
             st.success("Đã thêm giao dịch thành công!")
         except Exception as e:
             st.error(f"Thêm giao dịch thất bại: {e}")
-

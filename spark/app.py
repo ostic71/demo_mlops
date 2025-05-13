@@ -17,20 +17,6 @@ def save_to_postgres(df):
         password="password"
     )
     cur = conn.cursor()
-    # cur.execute("""
-    #     CREATE TABLE IF NOT EXISTS transactions (
-    #         transaction_id INTEGER,
-    #         amount DOUBLE PRECISION,
-    #         location TEXT,
-    #         timestamp BIGINT,
-    #         anomaly INTEGER
-    #     )
-    # """)
-    # for _, row in df.iterrows():
-    #     cur.execute("""
-    #         INSERT INTO transactions (transaction_id, amount, location, timestamp, anomaly)
-    #         VALUES (%s, %s, %s, %s, %s)
-    #     """, (row['transaction_id'], row['amount'], row['location'], row['timestamp'], row['anomaly']))
     cur.execute("""
     CREATE TABLE IF NOT EXISTS transactions (
         account_id INTEGER,
@@ -55,12 +41,39 @@ def save_to_postgres(df):
     conn.close()
 
 
-# schema = StructType([
-#     StructField("transaction_id", IntegerType()),
-#     StructField("amount", DoubleType()),
-#     StructField("location", StringType()),
-#     StructField("timestamp", LongType())
-# ])
+def save_to_postgres_anomalies(df):
+    conn = psycopg2.connect(
+        host="postgres",
+        database="bankdb",
+        user="user",
+        password="password"
+    )
+    cur = conn.cursor()
+    
+    # Tạo bảng transactions_anomaly nếu chưa có
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS transactions_anomaly (
+        account_id INTEGER,
+        transaction_id INTEGER,
+        amount DOUBLE PRECISION,
+        location TEXT,
+        timestamp BIGINT,
+        hour INTEGER,
+        anomaly INTEGER
+    )
+    """)
+    
+    # Chèn dữ liệu vào bảng transactions_anomaly
+    for _, row in df.iterrows():
+        cur.execute("""
+            INSERT INTO transactions_anomaly (account_id, transaction_id, amount, location, timestamp, hour, anomaly)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (row['account_id'], row['transaction_id'], row['amount'], row['location'], row['timestamp'], row['hour'], row['anomaly']))
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+
 
 schema = StructType([
     StructField("account_id", IntegerType()),
@@ -85,36 +98,6 @@ df = spark.readStream \
 
 df_parsed = df.select(from_json(col("value"), schema).alias("data")).select("data.*")
 
-# def process_batch(batch_df, batch_id):
-#     if batch_df.count() == 0:
-#         return
-
-#     pdf = batch_df.toPandas()
-#     X = pdf[['amount']].values
-
-#     model = IsolationForest(contamination=0.1)
-#     preds = model.fit_predict(X)
-
-#     pdf['anomaly'] = preds
-#     print("\n=== Anomaly Detection Result ===")
-#     print(pdf)
-
-# def process_batch(batch_df, batch_id):
-#     if batch_df.count() == 0:
-#         return
-
-#     pdf = batch_df.toPandas()
-#     X = pdf[['amount']].values
-
-#     model = IsolationForest(contamination=0.1)
-#     preds = model.fit_predict(X)
-
-#     pdf['anomaly'] = preds
-#     print("\n=== Anomaly Detection Result ===")
-#     print(pdf)
-
-#     save_to_postgres(pdf)
-
 
 def process_batch(batch_df, batch_id):
     if batch_df.count() == 0:
@@ -134,8 +117,13 @@ def process_batch(batch_df, batch_id):
     pdf['anomaly'] = preds
     print("\n=== Anomaly Detection Result ===")
     print(pdf)
-
     save_to_postgres(pdf)
+
+    # Lọc các giao dịch có anomaly = -1 (anomaly)
+    anomalies = pdf[pdf['anomaly'] == -1]
+
+    # Lưu các giao dịch có anomaly = -1 vào bảng transactions_anomaly
+    save_to_postgres_anomalies(anomalies)
 
 
 
