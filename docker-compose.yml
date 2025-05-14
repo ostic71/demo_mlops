@@ -20,6 +20,8 @@ services:
     build: ./spark
     volumes:
       - ./spark:/app
+    ports:
+      - "4040:4040"  # Đây là cổng mà Spark UI sẽ chạy
     command: ["spark-submit", "app.py"]
     depends_on:
       - data-generator

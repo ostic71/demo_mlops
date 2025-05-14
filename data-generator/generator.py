@@ -5,7 +5,7 @@ import random
 
 HOST = '0.0.0.0'
 PORT = 9999
-
+ 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.bind((HOST, PORT))
 server_socket.listen(1)
@@ -34,67 +34,3 @@ while True:
     print("Sent:", msg.strip())
     time.sleep(0.2)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# import socket
-# import json
-# import time
-# import random
-
-# HOST = '0.0.0.0'
-# PORT = 9999
-
-# server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-# server_socket.bind((HOST, PORT))
-# server_socket.listen(1)
-
-# print(f"Listening on {HOST}:{PORT}")
-# conn, addr = server_socket.accept()
-# print(f"Connection from {addr}")
-
-# while True:
-#     transaction = {
-#         "transaction_id": random.randint(1000, 9999),
-#         "amount": random.uniform(10, 10000),
-#         "location": random.choice(["HN", "HCM", "DN"]),
-#         "timestamp": int(time.time())
-#     }
-#     msg = json.dumps(transaction) + "\n"
-#     conn.sendall(msg.encode('utf-8'))
-#     print("Sent:", msg.strip())
-#     time.sleep(1)

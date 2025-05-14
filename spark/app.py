@@ -86,6 +86,7 @@ schema = StructType([
 
 spark = SparkSession.builder \
     .appName("SocketBankFraudDetection") \
+    .config("spark.ui.port", "4040")  \
     .getOrCreate()
 
 spark.sparkContext.setLogLevel("WARN")
